@@ -105,6 +105,10 @@ export class OpenaiService {
     userName?: string,
     now?: string,
     initTime?: string,
+    useRag?: boolean,
+    documents?: string[],
+    topK?: number,
+    embeddingModel?: string,
   ): Promise<string> {
     this.logger.log(
       JSON.stringify({
@@ -116,6 +120,10 @@ export class OpenaiService {
         userName,
         now,
         initTime,
+        useRag,
+        documentsCount: documents?.length ?? 0,
+        topK,
+        embeddingModel,
       }),
     );
 
@@ -128,8 +136,30 @@ export class OpenaiService {
       const apiKey = this.configService.get<string>('OPENAI_API_KEY');
       this.logger.log(JSON.stringify({ event: 'apiKeyCheck', exists: !!apiKey }));
 
-      // Build messages array with conversation history
+      // Build messages array with optional RAG context and conversation history
       let messages: Array<{ role: string; content: string }> = [];
+
+      if (useRag && documents && documents.length > 0) {
+        const selectedDocs = await this.selectTopKDocuments(
+          prompt,
+          documents,
+          topK ?? 3,
+          apiKey,
+          embeddingModel || 'text-embedding-3-small',
+        );
+
+        const contextBlock = selectedDocs
+          .map((doc, idx) => `(${idx + 1}) ${doc}`)
+          .join('\n');
+
+        messages.push({
+          role: 'system',
+          content:
+            'You are a helpful assistant. Use the provided context to answer the user. ' +
+            'If the answer is not in the context, say you do not know.\n\n' +
+            `Context:\n${contextBlock}`,
+        });
+      }
 
       // Get conversation history if userName is provided
       if (userName) {
@@ -183,5 +213,63 @@ export class OpenaiService {
       this.logger.error(JSON.stringify({ event: 'openaiError', error: error.response?.data || error.message }));
       throw new Error(`OpenAI API error: ${error.response?.data?.error?.message || error.message}`);
     }
+  }
+
+  private async selectTopKDocuments(
+    query: string,
+    documents: string[],
+    topK: number,
+    apiKey: string,
+    embeddingModel: string,
+  ): Promise<string[]> {
+    const inputs = [query, ...documents];
+    const embeddings = await this.getEmbeddings(inputs, embeddingModel, apiKey);
+    const queryEmbedding = embeddings[0];
+    const docEmbeddings = embeddings.slice(1);
+
+    const scored = docEmbeddings.map((embedding, index) => ({
+      index,
+      score: this.cosineSimilarity(queryEmbedding, embedding),
+    }));
+
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, topK).map(item => documents[item.index]);
+  }
+
+  private async getEmbeddings(
+    inputs: string[],
+    model: string,
+    apiKey: string,
+  ): Promise<number[][]> {
+    const response = await axios.post(
+      'https://api.openai.com/v1/embeddings',
+      {
+        model,
+        input: inputs,
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    return response.data.data.map((item: { embedding: number[] }) => item.embedding);
+  }
+
+  private cosineSimilarity(a: number[], b: number[]): number {
+    let dot = 0;
+    let normA = 0;
+    let normB = 0;
+    for (let i = 0; i < a.length; i += 1) {
+      dot += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+    if (normA === 0 || normB === 0) {
+      return 0;
+    }
+    return dot / (Math.sqrt(normA) * Math.sqrt(normB));
   }
 }

@@ -26,6 +26,10 @@ export class OpenaiController {
       createChatDto.userName,
       createChatDto.now,
       createChatDto.initTime,
+      createChatDto.useRag,
+      createChatDto.documents,
+      createChatDto.topK,
+      createChatDto.embeddingModel,
     );
     return { response };
   }

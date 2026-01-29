@@ -1,4 +1,14 @@
-import { IsString, IsOptional, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  Min,
+  Max,
+  IsBoolean,
+  IsArray,
+  ArrayMinSize,
+  IsInt,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateChatDto {
@@ -64,4 +74,48 @@ export class CreateChatDto {
   @IsOptional()
   @IsString()
   initTime?: string;
+
+  @ApiProperty({
+    description: 'Enable RAG (retrieval augmented generation)',
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  useRag?: boolean;
+
+  @ApiProperty({
+    description: 'Documents to retrieve from when RAG is enabled',
+    example: [
+      'NestJS는 Node.js 서버 사이드 애플리케이션을 위한 프레임워크입니다.',
+      'Redis는 인메모리 데이터 저장소로 캐시와 세션에 활용됩니다.',
+    ],
+    required: false,
+    isArray: true,
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsString({ each: true })
+  documents?: string[];
+
+  @ApiProperty({
+    description: 'Top K documents to use for RAG context',
+    example: 3,
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  topK?: number;
+
+  @ApiProperty({
+    description: 'Embedding model for RAG retrieval',
+    example: 'text-embedding-3-small',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  embeddingModel?: string;
 }
