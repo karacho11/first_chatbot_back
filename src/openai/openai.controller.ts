@@ -18,6 +18,14 @@ export class OpenaiController {
   async createChat(@Body() createChatDto: CreateChatDto) {
     console.log('Received DTO:', createChatDto);
     console.log('Prompt:', createChatDto.prompt);
+    
+    // If useRag is true but no documents provided, load from rag folder
+    let documents = createChatDto.documents;
+    if (createChatDto.useRag && (!documents || documents.length === 0)) {
+      documents = await this.openaiService.loadRagDocuments();
+      console.log(`Loaded ${documents.length} documents from rag folder`);
+    }
+    
     const response = await this.openaiService.createChat(
       createChatDto.prompt,
       createChatDto.model,
@@ -27,7 +35,7 @@ export class OpenaiController {
       createChatDto.now,
       createChatDto.initTime,
       createChatDto.useRag,
-      createChatDto.documents,
+      documents,
       createChatDto.topK,
       createChatDto.embeddingModel,
     );

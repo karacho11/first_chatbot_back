@@ -6,7 +6,6 @@ import {
   Max,
   IsBoolean,
   IsArray,
-  ArrayMinSize,
   IsInt,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
@@ -95,7 +94,6 @@ export class CreateChatDto {
   })
   @IsOptional()
   @IsArray()
-  @ArrayMinSize(1)
   @IsString({ each: true })
   documents?: string[];
 

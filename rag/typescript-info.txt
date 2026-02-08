@@ -1,0 +1,22 @@
+TypeScript는 Microsoft에서 개발한 JavaScript의 상위 집합 언어입니다.
+
+TypeScript의 특징:
+- 정적 타입 시스템을 제공하여 컴파일 시점에 오류를 발견할 수 있습니다.
+- JavaScript로 컴파일되어 모든 JavaScript 환경에서 실행 가능합니다.
+- ES6+ 기능을 완벽하게 지원합니다.
+- 인터페이스, 제네릭, 데코레이터 등 고급 기능을 제공합니다.
+
+TypeScript의 장점:
+1. 코드 품질 향상: 타입 체크로 버그를 사전에 방지합니다.
+2. 개발 생산성: IDE의 자동완성 및 리팩토링 지원이 우수합니다.
+3. 유지보수성: 명시적인 타입으로 코드 이해가 쉽습니다.
+4. 대규모 프로젝트에 적합: 모듈화와 타입 시스템으로 복잡한 애플리케이션 관리가 용이합니다.
+
+주요 타입:
+- 기본 타입: string, number, boolean, null, undefined
+- 배열: Array<T> 또는 T[]
+- 튜플: [string, number]
+- 열거형: enum
+- Any: 모든 타입 허용
+- Unknown: 타입 안전한 Any
+- Never: 발생하지 않는 값의 타입

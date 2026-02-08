@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { RedisService } from '../redis/redis.service';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class OpenaiService {
@@ -271,5 +273,39 @@ export class OpenaiService {
       return 0;
     }
     return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+  }
+
+  /**
+   * Load all .txt files from rag folder
+   */
+  async loadRagDocuments(): Promise<string[]> {
+    const ragFolderPath = path.join(process.cwd(), 'rag');
+    
+    try {
+      if (!fs.existsSync(ragFolderPath)) {
+        this.logger.warn(`RAG folder not found at ${ragFolderPath}`);
+        return [];
+      }
+
+      const files = fs.readdirSync(ragFolderPath);
+      const txtFiles = files.filter(file => file.endsWith('.txt'));
+      
+      this.logger.log(`Found ${txtFiles.length} txt files in rag folder`);
+
+      const documents: string[] = [];
+      for (const file of txtFiles) {
+        const filePath = path.join(ragFolderPath, file);
+        const content = fs.readFileSync(filePath, 'utf-8');
+        if (content.trim()) {
+          documents.push(content.trim());
+          this.logger.log(`Loaded ${file}: ${content.length} characters`);
+        }
+      }
+
+      return documents;
+    } catch (error) {
+      this.logger.error(`Error loading RAG documents: ${error.message}`);
+      return [];
+    }
   }
 }
